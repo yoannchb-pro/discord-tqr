@@ -1,4 +1,4 @@
-const DiscordQRCodeTokenHandler = require("../dist");
+import { DiscordQRCodeTokenHandler } from "../dist/index";
 (async function () {
   try {
     const handler = new DiscordQRCodeTokenHandler();

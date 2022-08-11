@@ -2,9 +2,10 @@
   "name": "discord-tqr",
   "version": "1.0.0",
   "description": "Generate QR code to get user token to login in, get informations ...",
-  "main": "index.js",
-  "types": "./types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
     "test": "node ./test/test.js"
   },
   "keywords": [
@@ -19,7 +20,12 @@
   "author": "yoannchb",
   "license": "MIT",
   "dependencies": {
+    "@types/puppeteer": "^5.4.6",
     "got": "^11.0.0",
-    "puppeteer": "^16.1.0"
+    "puppeteer": "^16.1.0",
+    "random-useragent": "^0.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.7.4"
   }
 }

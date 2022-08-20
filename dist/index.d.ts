@@ -1,17 +1,17 @@
 import { Browser, Page } from "puppeteer";
-export declare type DiscordQRCodeTokenHandlerConfig = {
+declare type DiscordTQRConfig = {
     loginUrl: string;
     discordUserApi: string;
     discordSubscriptionApi: string;
     httpHeader: any;
 };
-export declare class DiscordQRCodeTokenHandler {
+declare class DiscordTQR {
     token?: string;
     private $browser;
     private $page;
     qr: string;
     user: any;
-    config: DiscordQRCodeTokenHandlerConfig;
+    config: DiscordTQRConfig;
     constructor(token?: string);
     /**
      * Create a login QR Code
@@ -22,6 +22,13 @@ export declare class DiscordQRCodeTokenHandler {
         path?: string;
         browserOptions?: any;
         encoding?: string;
+        template?: {
+            path: string;
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        } | "default";
     }): Promise<any>;
     /**
      * Listen for token and return it when the program get it
@@ -48,3 +55,4 @@ export declare class DiscordQRCodeTokenHandler {
      */
     closeConnection(): Promise<void>;
 }
+export default DiscordTQR;

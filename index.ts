@@ -1,26 +1,29 @@
 "use strict";
 
+import jimg from "jimg";
 import { Browser, Page } from "puppeteer";
+import got from "got";
 
 const puppeteer = require("puppeteer");
-const got = require("got");
 const randomUseragent = require("random-useragent");
+const fs = require("fs");
+const path = require("path");
 
-export type DiscordQRCodeTokenHandlerConfig = {
+type DiscordTQRConfig = {
   loginUrl: string;
   discordUserApi: string;
   discordSubscriptionApi: string;
   httpHeader: any;
 };
 
-export class DiscordQRCodeTokenHandler {
+class DiscordTQR {
   private $browser: Browser = null;
   private $page: Page = null;
 
   public qr: string = null;
   public user: any = null;
 
-  public config: DiscordQRCodeTokenHandlerConfig = {
+  public config: DiscordTQRConfig = {
     loginUrl: "https://discord.com/login",
     discordUserApi: "https://discord.com/api/v9/users/@me",
     discordSubscriptionApi:
@@ -42,8 +45,24 @@ export class DiscordQRCodeTokenHandler {
    * @returns
    */
   async getQRCode(
-    options: { path?: string; browserOptions?: any; encoding?: string } = {}
+    options: {
+      path?: string;
+      browserOptions?: any;
+      encoding?: string;
+      template?:
+        | {
+            path: string;
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+          }
+        | "default";
+    } = {}
   ) {
+    if (typeof options.template === "string" && options.template !== "default")
+      throw new Error("Invalide value for 'template'");
+
     if (this.$browser || this.$page) await this.closeConnection();
 
     this.$browser = await puppeteer.launch(
@@ -70,12 +89,40 @@ export class DiscordQRCodeTokenHandler {
     const parentCanvas = await canvas!.getProperty("parentNode");
     const qrC = await parentCanvas.getProperty("parentNode");
 
-    const data = await (qrC as any).screenshot({
-      ...(options.path ? { path: options.path } : {}),
+    let data = await (qrC as any).screenshot({
+      ...(options.path && !options.template ? { path: options.path } : {}),
       ...(options.encoding ? { path: options.encoding } : {}),
     });
 
-    this.qr = data.toString();
+    //template
+    if (options.template) {
+      const tmpFile = path.resolve(__dirname, "./tmp.png");
+      fs.writeFileSync(tmpFile, data.toString("base64"), "base64");
+      const optionsJimg = {
+        path: options.path,
+        images: [
+          {
+            path:
+              options.template === "default"
+                ? path.resolve(__dirname, "../assets/template.png")
+                : options.template.path,
+          },
+          options.template === "default"
+            ? {
+                path: tmpFile,
+                x: 103,
+                y: 391,
+                width: 200,
+                height: 200,
+              }
+            : { ...options.template, path: tmpFile },
+        ],
+      };
+      data = await jimg(optionsJimg);
+      fs.unlinkSync(tmpFile);
+    }
+
+    this.qr = data;
 
     return data;
   }
@@ -164,6 +211,8 @@ export class DiscordQRCodeTokenHandler {
 
     const page = (await browser.pages())[0];
 
+    await page.setExtraHTTPHeaders(this.config.httpHeader);
+
     await page.goto(this.config.loginUrl, {
       waitUntil: "domcontentloaded",
     });
@@ -195,4 +244,4 @@ export class DiscordQRCodeTokenHandler {
   }
 }
 
-module.exports = DiscordQRCodeTokenHandler;
+export default DiscordTQR;

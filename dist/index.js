@@ -13,11 +13,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const jimg_1 = __importDefault(require("jimg"));
-const got_1 = __importDefault(require("got"));
 const puppeteer = require("puppeteer");
 const randomUseragent = require("random-useragent");
 const fs = require("fs");
 const path = require("path");
+const fetch = require("node-fetch");
 class DiscordTQR {
     constructor(token) {
         this.token = token;
@@ -59,11 +59,11 @@ class DiscordTQR {
             yield page.goto(this.config.loginUrl, {
                 waitUntil: "networkidle2",
             });
-            yield page.waitForSelector("canvas");
-            const canvas = yield page.$("canvas");
-            const parentCanvas = yield canvas.getProperty("parentNode");
-            const qrC = yield parentCanvas.getProperty("parentNode");
-            let data = yield qrC.screenshot(Object.assign(Object.assign({}, (options.path && !options.template ? { path: options.path } : {})), (options.encoding ? { path: options.encoding } : {})));
+            yield page.waitForSelector('[class^="qrCode-"] img[src^="data:image/png;base64,"]');
+            if (options === null || options === void 0 ? void 0 : options.wait)
+                yield new Promise((r) => setTimeout(r, options.wait));
+            const qrC = yield page.$('[class^="qrCode-"]');
+            let data = yield qrC.screenshot(Object.assign(Object.assign(Object.assign({}, (options.path && !options.template ? { path: options.path } : {})), (options.encoding ? { path: options.encoding } : {})), { captureBeyondViewport: false }));
             //template
             if (options.template) {
                 const tmpFile = path.resolve(__dirname, "./tmp.png");
@@ -126,14 +126,14 @@ class DiscordTQR {
             token = token !== null && token !== void 0 ? token : this.token;
             if (!token)
                 throw new Error("Invalide token");
-            const scrapInfo = yield (0, got_1.default)(this.config.discordUserApi, {
+            const scrapInfo = yield fetch(this.config.discordUserApi, {
                 headers: { Authorization: token },
             });
-            const info = JSON.parse(scrapInfo.body);
-            const scrapSub = yield (0, got_1.default)(this.config.discordSubscriptionApi, {
+            const info = yield scrapInfo.json();
+            const scrapSub = yield fetch(this.config.discordSubscriptionApi, {
                 headers: { Authorization: token },
             });
-            const sub = JSON.parse(scrapSub.body);
+            const sub = yield scrapSub.json();
             const user = Object.assign(Object.assign({}, info), { user: info.username + "#" + info.discriminator, avatar_url: "https://cdn.discordapp.com/avatars/" + info.id + "/" + info.avatar, subscription: sub });
             this.user = user;
             return user;

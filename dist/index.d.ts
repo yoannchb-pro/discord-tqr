@@ -22,12 +22,13 @@ declare class DiscordTQR {
         path?: string;
         browserOptions?: any;
         encoding?: string;
+        wait?: number;
         template?: {
             path: string;
-            x: number;
-            y: number;
-            width: number;
-            height: number;
+            x?: number;
+            y?: number;
+            width?: number;
+            height?: number;
         } | "default";
     }): Promise<any>;
     /**

@@ -2,12 +2,12 @@
 
 import jimg from "jimg";
 import { Browser, Page } from "puppeteer";
-import got from "got";
 
 const puppeteer = require("puppeteer");
 const randomUseragent = require("random-useragent");
 const fs = require("fs");
 const path = require("path");
+const fetch = require("node-fetch");
 
 type DiscordTQRConfig = {
   loginUrl: string;
@@ -49,13 +49,14 @@ class DiscordTQR {
       path?: string;
       browserOptions?: any;
       encoding?: string;
+      wait?: number;
       template?:
         | {
             path: string;
-            x: number;
-            y: number;
-            width: number;
-            height: number;
+            x?: number;
+            y?: number;
+            width?: number;
+            height?: number;
           }
         | "default";
     } = {}
@@ -83,15 +84,18 @@ class DiscordTQR {
       waitUntil: "networkidle2",
     });
 
-    await page.waitForSelector("canvas");
+    await page.waitForSelector(
+      '[class^="qrCode-"] img[src^="data:image/png;base64,"]'
+    );
 
-    const canvas = await page.$("canvas");
-    const parentCanvas = await canvas!.getProperty("parentNode");
-    const qrC = await parentCanvas.getProperty("parentNode");
+    if (options?.wait) await new Promise((r) => setTimeout(r, options.wait));
+
+    const qrC = await page.$('[class^="qrCode-"]');
 
     let data = await (qrC as any).screenshot({
       ...(options.path && !options.template ? { path: options.path } : {}),
       ...(options.encoding ? { path: options.encoding } : {}),
+      captureBeyondViewport: false,
     });
 
     //template
@@ -164,15 +168,15 @@ class DiscordTQR {
 
     if (!token) throw new Error("Invalide token");
 
-    const scrapInfo = await got(this.config.discordUserApi, {
+    const scrapInfo = await fetch(this.config.discordUserApi, {
       headers: { Authorization: token },
     });
-    const info = JSON.parse(scrapInfo.body);
+    const info: any = await scrapInfo.json();
 
-    const scrapSub = await got(this.config.discordSubscriptionApi, {
+    const scrapSub = await fetch(this.config.discordSubscriptionApi, {
       headers: { Authorization: token },
     });
-    const sub = JSON.parse(scrapSub.body);
+    const sub: any = await scrapSub.json();
 
     const user = {
       ...info,

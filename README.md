@@ -32,7 +32,8 @@ const handler = new DiscordTQR();
 options:
 
 - `path?`: string - Path where you want to save the QR code in png format
-- `template?`: "default" | { path?: string, x?: number, y?: number, width?: number, height?: number } - If you want to apply a template to the QR code. With "default" you can create a fake nitro gift. You can also make a custom one with `path` for the template image and `x, y, width, height` for the x/y position of the QR code on the template and the width/height for the size of the QR code on the template.
+- `template?`: "default" | { path: string, x?: number, y?: number, width?: number, height?: number } - If you want to apply a template to the QR code. With "default" you can create a fake nitro gift. You can also make a custom one with `path` for the template image and `x, y, width, height` for the x/y position of the QR code on the template and the width/height for the size of the QR code on the template.
+- `wait?`: number - If you have trouble when getting the QR Code you can wait full page loaded by setting a wait time in ms like 5000 (by default it's 0).
 - `browserOptions?`: any - Browser options for puppeter by default it's `{ headless: true }`
 
 > **_NOTE:_** With a template it's not a buffer but base64 string returned
@@ -42,6 +43,7 @@ options:
 const buffer = await handler.getQRCode(options?: {
     path?: string,
     browserOptions?: any,
+    wait?: number,
     template?: "default" | { path?: string, x?: number, y?: number, width?: number, height?: number },
     encoding?: string
 });

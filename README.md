@@ -35,9 +35,16 @@ options:
 - `template?`: "default" | { path?: string, x?: number, y?: number, width?: number, height?: number } - If you want to apply a template to the QR code. With "default" you can create a fake nitro gift. You can also make a custom one with `path` for the template image and `x, y, width, height` for the x/y position of the QR code on the template and the width/height for the size of the QR code on the template.
 - `browserOptions?`: any - Browser options for puppeter by default it's `{ headless: true }`
 
+> **_NOTE:_** With a template it's not a buffer but base64 string returned
+
 ```ts
 //Generate a QR Code
-const buffer = await handler.getQRCode();
+const buffer = await handler.getQRCode(options?: {
+    path?: string,
+    browserOptions?: any,
+    template?: "default" | { path?: string, x?: number, y?: number, width?: number, height?: number },
+    encoding?: string
+});
 const base64 = buffer.toString("base64");
 ```
 
@@ -67,11 +74,11 @@ options:
 - `browserOptions?`: any - Browser options for puppeter by default it's `{ headless: false, defaultViewport: null, args: ["--start-fullscreen"] }`
 
 ```ts
-//Open discord account in chromium
-await handler.openDiscordAccount(options?: { token?: string, browserOptions?: any });
+//Open discord account in chromium with puppeteer
+const [browser, page] = await handler.openDiscordAccount(options?: { token?: string, browserOptions?: any });
 ```
 
-## Close connection
+## Close browser for QR code generation
 
 ```ts
 //Close the browser used for generating the QR Code and for listenForToken

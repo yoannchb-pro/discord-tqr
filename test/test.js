@@ -1,3 +1,5 @@
+const path = require("path");
+
 const DiscordTQR = require("../dist").default;
 (async function () {
   try {
@@ -5,7 +7,7 @@ const DiscordTQR = require("../dist").default;
 
     console.log("Creating qr code...");
     await handler.getQRCode({
-      path: "../assets/qr.png",
+      path: path.resolve(__dirname, "../assets/qr-with-template.png"),
       template: "default",
     });
     console.log("QR code created !");

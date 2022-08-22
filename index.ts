@@ -80,7 +80,7 @@ class DiscordTQR {
     await page.setExtraHTTPHeaders(this.config.httpHeader);
 
     await page.goto(this.config.loginUrl, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle2",
     });
 
     await page.waitForSelector("canvas");

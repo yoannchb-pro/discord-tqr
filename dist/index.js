@@ -57,7 +57,7 @@ class DiscordTQR {
             });
             yield page.setExtraHTTPHeaders(this.config.httpHeader);
             yield page.goto(this.config.loginUrl, {
-                waitUntil: "domcontentloaded",
+                waitUntil: "networkidle2",
             });
             yield page.waitForSelector("canvas");
             const canvas = yield page.$("canvas");

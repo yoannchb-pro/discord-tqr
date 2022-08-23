@@ -1,4 +1,4 @@
-# Discord-tqr v1.0.0
+# Discord-tqr
 
 Generate QR code to get user token to take control of the account, get informations ...
 

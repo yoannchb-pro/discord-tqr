@@ -48,12 +48,15 @@ class DiscordTQR {
                 throw new Error("Invalide value for 'template'");
             if (this.$browser || this.$page)
                 yield this.closeConnection();
-            this.$browser = yield puppeteer.launch((options === null || options === void 0 ? void 0 : options.browserOptions) ? options.browserOptions : { headless: true });
+            this.$browser = yield puppeteer.launch((options === null || options === void 0 ? void 0 : options.browserOptions)
+                ? options.browserOptions
+                : { headless: true, defaultViewport: null });
             this.$page = (yield this.$browser.pages())[0];
             const page = this.$page;
             yield page.setViewport({
                 width: 1920,
                 height: 1080,
+                deviceScaleFactor: 1,
             });
             yield page.setExtraHTTPHeaders(this.config.httpHeader);
             yield page.goto(this.config.loginUrl, {

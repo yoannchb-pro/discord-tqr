@@ -67,8 +67,11 @@ class DiscordTQR {
     if (this.$browser || this.$page) await this.closeConnection();
 
     this.$browser = await puppeteer.launch(
-      options?.browserOptions ? options.browserOptions : { headless: true }
+      options?.browserOptions
+        ? options.browserOptions
+        : { headless: true, defaultViewport: null }
     );
+
     this.$page = (await this.$browser.pages())[0];
 
     const page = this.$page;
@@ -76,6 +79,7 @@ class DiscordTQR {
     await page.setViewport({
       width: 1920,
       height: 1080,
+      deviceScaleFactor: 1,
     });
 
     await page.setExtraHTTPHeaders(this.config.httpHeader);

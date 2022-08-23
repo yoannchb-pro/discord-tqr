@@ -82,8 +82,8 @@ class DiscordTQR {
                         options.template === "default"
                             ? {
                                 path: tmpFile,
-                                x: 103,
-                                y: 391,
+                                x: 102,
+                                y: 390,
                                 width: 200,
                                 height: 200,
                             }

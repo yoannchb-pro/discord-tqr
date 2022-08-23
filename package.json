@@ -15,11 +15,15 @@
   "keywords": [
     "discord",
     "token",
-    "grab",
+    "grabber",
     "exploit",
     "hack",
-    "qr",
-    "login"
+    "qrcode",
+    "login",
+    "discord-js",
+    "discord-bot",
+    "account",
+    "user"
   ],
   "author": "yoannchb",
   "license": "MIT",

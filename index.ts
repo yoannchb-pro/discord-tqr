@@ -1,9 +1,8 @@
 "use strict";
 
 import jimg from "jimg";
-import { Browser, Page } from "puppeteer";
+import puppeteer from "puppeteer";
 
-const puppeteer = require("puppeteer");
 const randomUseragent = require("random-useragent");
 const fs = require("fs");
 const path = require("path");
@@ -13,12 +12,12 @@ type DiscordTQRConfig = {
   loginUrl: string;
   discordUserApi: string;
   discordSubscriptionApi: string;
-  httpHeader: any;
+  httpHeader: Record<string, string>;
 };
 
 class DiscordTQR {
-  private $browser: Browser = null;
-  private $page: Page = null;
+  private $browser: puppeteer.Browser = null;
+  private $page: puppeteer.Page = null;
 
   public qr: string = null;
   public user: any = null;
@@ -47,7 +46,7 @@ class DiscordTQR {
   async getQRCode(
     options: {
       path?: string;
-      browserOptions?: any;
+      browserOptions?: puppeteer.PuppeteerLaunchOptions;
       encoding?: string;
       wait?: number;
       template?:
@@ -89,7 +88,7 @@ class DiscordTQR {
     });
 
     await page.waitForSelector(
-      '[class^="qrCode-"] img[src^="data:image/png;base64,"]'
+      '[class^="qrCode-"] img[src^="data:image/png;base64,"], [class^="qrCode-"] svg'
     );
 
     if (options?.wait) await new Promise((r) => setTimeout(r, options.wait));
@@ -201,8 +200,11 @@ class DiscordTQR {
    * @returns
    */
   async openDiscordAccount(
-    options: { token?: string; browserOptions?: any } = {}
-  ): Promise<[Browser, Page]> {
+    options: {
+      token?: string;
+      browserOptions?: puppeteer.PuppeteerLaunchOptions;
+    } = {}
+  ): Promise<{ browser: puppeteer.Browser; page: puppeteer.Page }> {
     const token = options?.token ?? this.token;
 
     if (!token) throw new Error("Invalide token");
@@ -236,7 +238,7 @@ class DiscordTQR {
       }, 2500);
     }, token);
 
-    return [browser, page];
+    return { browser, page };
   }
 
   /**

@@ -7,9 +7,9 @@ const DiscordTQR = require("../dist").default;
 
     console.log("Creating qr code...");
     await handler.getQRCode({
-      path: path.resolve(__dirname, "../assets/qr-with-template.png"),
+      path: path.resolve(__dirname, "../assets/qr.png"),
       // browserOptions: { headless: false, defaultViewport: null },
-      template: "default",
+      // template: "default",
     });
     console.log("QR code created !");
 
@@ -17,8 +17,8 @@ const DiscordTQR = require("../dist").default;
     await handler.listenForToken();
     console.log("Token: ", handler.token);
 
-    // console.log("Opening user account...");
-    // const [browser, page] = await handler.openDiscordAccount();
+    console.log("Opening user account...");
+    const { browser, page } = await handler.openDiscordAccount();
 
     console.log("Getting user informations...");
     await handler.getDiscordAccountInfo();

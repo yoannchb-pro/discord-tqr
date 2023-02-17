@@ -13,7 +13,7 @@ import DiscordTQR from "../dist";
     console.log("Token: ", handler.token);
 
     console.log("Opening user account...");
-    const [browser, page] = await handler.openDiscordAccount();
+    const { browser, page } = await handler.openDiscordAccount();
 
     console.log("Getting user informations...");
     await handler.getDiscordAccountInfo();

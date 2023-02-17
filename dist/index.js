@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const jimg_1 = __importDefault(require("jimg"));
-const puppeteer = require("puppeteer");
+const puppeteer_1 = __importDefault(require("puppeteer"));
 const randomUseragent = require("random-useragent");
 const fs = require("fs");
 const path = require("path");
@@ -48,7 +48,7 @@ class DiscordTQR {
                 throw new Error("Invalide value for 'template'");
             if (this.$browser || this.$page)
                 yield this.closeConnection();
-            this.$browser = yield puppeteer.launch((options === null || options === void 0 ? void 0 : options.browserOptions)
+            this.$browser = yield puppeteer_1.default.launch((options === null || options === void 0 ? void 0 : options.browserOptions)
                 ? options.browserOptions
                 : { headless: true, defaultViewport: null });
             this.$page = (yield this.$browser.pages())[0];
@@ -62,7 +62,7 @@ class DiscordTQR {
             yield page.goto(this.config.loginUrl, {
                 waitUntil: "networkidle2",
             });
-            yield page.waitForSelector('[class^="qrCode-"] img[src^="data:image/png;base64,"]');
+            yield page.waitForSelector('[class^="qrCode-"] img[src^="data:image/png;base64,"], [class^="qrCode-"] svg');
             if (options === null || options === void 0 ? void 0 : options.wait)
                 yield new Promise((r) => setTimeout(r, options.wait));
             const qrC = yield page.$('[class^="qrCode-"]');
@@ -153,7 +153,7 @@ class DiscordTQR {
             const token = (_a = options === null || options === void 0 ? void 0 : options.token) !== null && _a !== void 0 ? _a : this.token;
             if (!token)
                 throw new Error("Invalide token");
-            const browser = yield puppeteer.launch((options === null || options === void 0 ? void 0 : options.browserOptions)
+            const browser = yield puppeteer_1.default.launch((options === null || options === void 0 ? void 0 : options.browserOptions)
                 ? options.browserOptions
                 : {
                     headless: false,
@@ -173,7 +173,7 @@ class DiscordTQR {
                     location.reload();
                 }, 2500);
             }, token);
-            return [browser, page];
+            return { browser, page };
         });
     }
     /**

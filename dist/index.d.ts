@@ -1,9 +1,9 @@
-import { Browser, Page } from "puppeteer";
-declare type DiscordTQRConfig = {
+import puppeteer from "puppeteer";
+type DiscordTQRConfig = {
     loginUrl: string;
     discordUserApi: string;
     discordSubscriptionApi: string;
-    httpHeader: any;
+    httpHeader: Record<string, string>;
 };
 declare class DiscordTQR {
     token?: string;
@@ -20,7 +20,7 @@ declare class DiscordTQR {
      */
     getQRCode(options?: {
         path?: string;
-        browserOptions?: any;
+        browserOptions?: puppeteer.PuppeteerLaunchOptions;
         encoding?: string;
         wait?: number;
         template?: {
@@ -49,8 +49,11 @@ declare class DiscordTQR {
      */
     openDiscordAccount(options?: {
         token?: string;
-        browserOptions?: any;
-    }): Promise<[Browser, Page]>;
+        browserOptions?: puppeteer.PuppeteerLaunchOptions;
+    }): Promise<{
+        browser: puppeteer.Browser;
+        page: puppeteer.Page;
+    }>;
     /**
      * Close the opened browser used to generate QR Code and to listen the token
      */

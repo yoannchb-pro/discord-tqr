@@ -1,12 +1,12 @@
 "use strict";
 
 import jimg from "jimg";
-import puppeteer from "puppeteer";
+import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
+import fs from "fs";
+import path from "path";
+import fetch from "node-fetch";
 
-const randomUseragent = require("random-useragent");
-const fs = require("fs");
-const path = require("path");
-const fetch = require("node-fetch");
+import { APIUser } from "discord-api-types/v10";
 
 type DiscordTQRConfig = {
   loginUrl: string;
@@ -15,22 +15,42 @@ type DiscordTQRConfig = {
   httpHeader: Record<string, string>;
 };
 
+type UserInfo = APIUser & {
+  user: string;
+  avatar_url: string;
+  subscription: BillingSubscriptionsResponse;
+};
+
+interface BillingSubscription {
+  id: string;
+  planId: string;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  created: string;
+}
+
+interface BillingSubscriptionsResponse {
+  subscriptions: BillingSubscription[];
+}
+
 class DiscordTQR {
-  private $browser: puppeteer.Browser = null;
-  private $page: puppeteer.Page = null;
+  private $browser: Browser = null;
+  private $page: Page = null;
 
   public qr: string = null;
-  public user: any = null;
+  public user: UserInfo = null;
 
   public config: DiscordTQRConfig = {
     loginUrl: "https://discord.com/login",
-    discordUserApi: "https://discord.com/api/v9/users/@me",
+    discordUserApi: "https://discord.com/api/v10/users/@me",
     discordSubscriptionApi:
-      "https://discordapp.com/api/v9/users/@me/billing/subscriptions",
+      "https://discordapp.com/api/v10/users/@me/billing/subscriptions",
     httpHeader: {
       accept:
         "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-      "user-agent": randomUseragent.getRandom(),
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
       "accept-encoding": "gzip, deflate, br",
       "accept-language": "fr-FR,fr;q=0.9,fr;q=0.8",
     },
@@ -46,7 +66,7 @@ class DiscordTQR {
   async getQRCode(
     options: {
       path?: string;
-      browserOptions?: puppeteer.PuppeteerLaunchOptions;
+      browserOptions?: PuppeteerLaunchOptions;
       encoding?: string;
       wait?: number;
       template?:
@@ -59,7 +79,7 @@ class DiscordTQR {
           }
         | "default";
     } = {}
-  ) {
+  ): Promise<string> {
     if (typeof options.template === "string" && options.template !== "default")
       throw new Error("Invalide value for 'template'");
 
@@ -68,7 +88,7 @@ class DiscordTQR {
     this.$browser = await puppeteer.launch(
       options?.browserOptions
         ? options.browserOptions
-        : { headless: true, defaultViewport: null }
+        : { headless: "new", defaultViewport: null }
     );
 
     this.$page = (await this.$browser.pages())[0];
@@ -95,16 +115,19 @@ class DiscordTQR {
 
     const qrC = await page.$('[class^="qrCode-"]');
 
-    let data = await (qrC as any).screenshot({
+    let data = await qrC.screenshot({
       ...(options.path && !options.template ? { path: options.path } : {}),
       ...(options.encoding ? { path: options.encoding } : {}),
       captureBeyondViewport: false,
     });
 
+    let finalImageBase64 =
+      data instanceof Buffer ? data.toString("base64") : data;
+
     //template
     if (options.template) {
       const tmpFile = path.resolve(__dirname, "./tmp.png");
-      fs.writeFileSync(tmpFile, data.toString("base64"), "base64");
+      fs.writeFileSync(tmpFile, finalImageBase64, "base64");
       const optionsJimg = {
         path: options.path,
         images: [
@@ -125,13 +148,13 @@ class DiscordTQR {
             : { ...options.template, path: tmpFile },
         ],
       };
-      data = await jimg(optionsJimg);
+      finalImageBase64 = await jimg(optionsJimg);
       fs.unlinkSync(tmpFile);
     }
 
-    this.qr = data;
+    this.qr = finalImageBase64;
 
-    return data;
+    return finalImageBase64;
   }
 
   /**
@@ -144,15 +167,20 @@ class DiscordTQR {
 
     const page = this.$page;
 
-    await page.waitForNavigation({ timeout: 60000 });
+    try {
+      await page.waitForNavigation({ timeout: 60000 });
+    } catch (e) {
+      throw new Error(
+        "Max time reached (1 minute). The QR code is not valide anymore"
+      );
+    }
 
     const token = await page.evaluate(() => {
       window.dispatchEvent(new Event("beforeunload"));
-
       const iframe = document.createElement("iframe");
       iframe.style.display = "none";
       document.body.appendChild(iframe);
-      const localStorage = (iframe as any).contentWindow.localStorage;
+      const localStorage = iframe.contentWindow.localStorage;
       return JSON.parse(localStorage.token);
     });
 
@@ -174,14 +202,14 @@ class DiscordTQR {
     const scrapInfo = await fetch(this.config.discordUserApi, {
       headers: { Authorization: token },
     });
-    const info: any = await scrapInfo.json();
+    const info: APIUser = await scrapInfo.json();
 
     const scrapSub = await fetch(this.config.discordSubscriptionApi, {
       headers: { Authorization: token },
     });
-    const sub: any = await scrapSub.json();
+    const sub: BillingSubscriptionsResponse = await scrapSub.json();
 
-    const user = {
+    const user: UserInfo = {
       ...info,
       user: info.username + "#" + info.discriminator,
       avatar_url:
@@ -202,9 +230,9 @@ class DiscordTQR {
   async openDiscordAccount(
     options: {
       token?: string;
-      browserOptions?: puppeteer.PuppeteerLaunchOptions;
+      browserOptions?: PuppeteerLaunchOptions;
     } = {}
-  ): Promise<{ browser: puppeteer.Browser; page: puppeteer.Page }> {
+  ): Promise<{ browser: Browser; page: Page }> {
     const token = options?.token ?? this.token;
 
     if (!token) throw new Error("Invalide token");
@@ -215,7 +243,6 @@ class DiscordTQR {
         : {
             headless: false,
             defaultViewport: null,
-            args: ["--start-fullscreen"],
           }
     );
 
@@ -229,8 +256,8 @@ class DiscordTQR {
 
     await page.evaluate((token: string) => {
       setInterval(() => {
-        (
-          document.body.appendChild(document.createElement("iframe")) as any
+        document.body.appendChild(
+          document.createElement("iframe")
         ).contentWindow.localStorage.token = `"${token}"`;
       }, 50);
       setTimeout(() => {

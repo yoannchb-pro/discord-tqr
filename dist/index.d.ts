@@ -1,16 +1,33 @@
-import puppeteer from "puppeteer";
+import { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
+import { APIUser } from "discord-api-types/v10";
 type DiscordTQRConfig = {
     loginUrl: string;
     discordUserApi: string;
     discordSubscriptionApi: string;
     httpHeader: Record<string, string>;
 };
+type UserInfo = APIUser & {
+    user: string;
+    avatar_url: string;
+    subscription: BillingSubscriptionsResponse;
+};
+interface BillingSubscription {
+    id: string;
+    planId: string;
+    status: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    created: string;
+}
+interface BillingSubscriptionsResponse {
+    subscriptions: BillingSubscription[];
+}
 declare class DiscordTQR {
     token?: string;
     private $browser;
     private $page;
     qr: string;
-    user: any;
+    user: UserInfo;
     config: DiscordTQRConfig;
     constructor(token?: string);
     /**
@@ -20,7 +37,7 @@ declare class DiscordTQR {
      */
     getQRCode(options?: {
         path?: string;
-        browserOptions?: puppeteer.PuppeteerLaunchOptions;
+        browserOptions?: PuppeteerLaunchOptions;
         encoding?: string;
         wait?: number;
         template?: {
@@ -30,7 +47,7 @@ declare class DiscordTQR {
             width?: number;
             height?: number;
         } | "default";
-    }): Promise<any>;
+    }): Promise<string>;
     /**
      * Listen for token and return it when the program get it
      * @returns
@@ -41,7 +58,7 @@ declare class DiscordTQR {
      * @param token
      * @returns
      */
-    getDiscordAccountInfo(token?: string): Promise<any>;
+    getDiscordAccountInfo(token?: string): Promise<UserInfo>;
     /**
      * Open the discord account in puppeter and return the browser and page corresponding
      * @param options
@@ -49,10 +66,10 @@ declare class DiscordTQR {
      */
     openDiscordAccount(options?: {
         token?: string;
-        browserOptions?: puppeteer.PuppeteerLaunchOptions;
+        browserOptions?: PuppeteerLaunchOptions;
     }): Promise<{
-        browser: puppeteer.Browser;
-        page: puppeteer.Page;
+        browser: Browser;
+        page: Page;
     }>;
     /**
      * Close the opened browser used to generate QR Code and to listen the token

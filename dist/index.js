@@ -14,10 +14,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const jimg_1 = __importDefault(require("jimg"));
 const puppeteer_1 = __importDefault(require("puppeteer"));
-const randomUseragent = require("random-useragent");
-const fs = require("fs");
-const path = require("path");
-const fetch = require("node-fetch");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const node_fetch_1 = __importDefault(require("node-fetch"));
 class DiscordTQR {
     constructor(token) {
         this.token = token;
@@ -27,11 +26,11 @@ class DiscordTQR {
         this.user = null;
         this.config = {
             loginUrl: "https://discord.com/login",
-            discordUserApi: "https://discord.com/api/v9/users/@me",
-            discordSubscriptionApi: "https://discordapp.com/api/v9/users/@me/billing/subscriptions",
+            discordUserApi: "https://discord.com/api/v10/users/@me",
+            discordSubscriptionApi: "https://discordapp.com/api/v10/users/@me/billing/subscriptions",
             httpHeader: {
                 accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                "user-agent": randomUseragent.getRandom(),
+                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
                 "accept-encoding": "gzip, deflate, br",
                 "accept-language": "fr-FR,fr;q=0.9,fr;q=0.8",
             },
@@ -50,7 +49,7 @@ class DiscordTQR {
                 yield this.closeConnection();
             this.$browser = yield puppeteer_1.default.launch((options === null || options === void 0 ? void 0 : options.browserOptions)
                 ? options.browserOptions
-                : { headless: true, defaultViewport: null });
+                : { headless: "new", defaultViewport: null });
             this.$page = (yield this.$browser.pages())[0];
             const page = this.$page;
             yield page.setViewport({
@@ -67,16 +66,17 @@ class DiscordTQR {
                 yield new Promise((r) => setTimeout(r, options.wait));
             const qrC = yield page.$('[class^="qrCode-"]');
             let data = yield qrC.screenshot(Object.assign(Object.assign(Object.assign({}, (options.path && !options.template ? { path: options.path } : {})), (options.encoding ? { path: options.encoding } : {})), { captureBeyondViewport: false }));
+            let finalImageBase64 = data instanceof Buffer ? data.toString("base64") : data;
             //template
             if (options.template) {
-                const tmpFile = path.resolve(__dirname, "./tmp.png");
-                fs.writeFileSync(tmpFile, data.toString("base64"), "base64");
+                const tmpFile = path_1.default.resolve(__dirname, "./tmp.png");
+                fs_1.default.writeFileSync(tmpFile, finalImageBase64, "base64");
                 const optionsJimg = {
                     path: options.path,
                     images: [
                         {
                             path: options.template === "default"
-                                ? path.resolve(__dirname, "../assets/template.png")
+                                ? path_1.default.resolve(__dirname, "../assets/template.png")
                                 : options.template.path,
                         },
                         options.template === "default"
@@ -90,11 +90,11 @@ class DiscordTQR {
                             : Object.assign(Object.assign({}, options.template), { path: tmpFile }),
                     ],
                 };
-                data = yield (0, jimg_1.default)(optionsJimg);
-                fs.unlinkSync(tmpFile);
+                finalImageBase64 = yield (0, jimg_1.default)(optionsJimg);
+                fs_1.default.unlinkSync(tmpFile);
             }
-            this.qr = data;
-            return data;
+            this.qr = finalImageBase64;
+            return finalImageBase64;
         });
     }
     /**
@@ -106,7 +106,12 @@ class DiscordTQR {
             if (!this.$browser || !this.$page)
                 throw new Error("This method need to be launch after 'getQRCode' method");
             const page = this.$page;
-            yield page.waitForNavigation({ timeout: 60000 });
+            try {
+                yield page.waitForNavigation({ timeout: 60000 });
+            }
+            catch (e) {
+                throw new Error("Max time reached (1 minute). The QR code is not valide anymore");
+            }
             const token = yield page.evaluate(() => {
                 window.dispatchEvent(new Event("beforeunload"));
                 const iframe = document.createElement("iframe");
@@ -129,11 +134,11 @@ class DiscordTQR {
             token = token !== null && token !== void 0 ? token : this.token;
             if (!token)
                 throw new Error("Invalide token");
-            const scrapInfo = yield fetch(this.config.discordUserApi, {
+            const scrapInfo = yield (0, node_fetch_1.default)(this.config.discordUserApi, {
                 headers: { Authorization: token },
             });
             const info = yield scrapInfo.json();
-            const scrapSub = yield fetch(this.config.discordSubscriptionApi, {
+            const scrapSub = yield (0, node_fetch_1.default)(this.config.discordSubscriptionApi, {
                 headers: { Authorization: token },
             });
             const sub = yield scrapSub.json();
@@ -158,7 +163,6 @@ class DiscordTQR {
                 : {
                     headless: false,
                     defaultViewport: null,
-                    args: ["--start-fullscreen"],
                 });
             const page = (yield browser.pages())[0];
             yield page.setExtraHTTPHeaders(this.config.httpHeader);

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.4
+
+- Fixed QR code creation
+
 ## v1.0.3
 
 - Fixed `listenForToken`

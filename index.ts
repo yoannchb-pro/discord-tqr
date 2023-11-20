@@ -107,13 +107,11 @@ class DiscordTQR {
       waitUntil: "networkidle2",
     });
 
-    await page.waitForSelector(
-      '[class^="qrCode-"] img[src^="data:image/png;base64,"], [class^="qrCode-"] svg'
-    );
+    await page.waitForSelector('[class^="qrCodeOverlay"]');
 
     if (options?.wait) await new Promise((r) => setTimeout(r, options.wait));
 
-    const qrC = await page.$('[class^="qrCode-"]');
+    const qrC = await page.$('[class^="qrCodeOverlay"]');
 
     let data = await qrC.screenshot({
       ...(options.path && !options.template ? { path: options.path } : {}),

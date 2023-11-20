@@ -9,7 +9,7 @@ const DiscordTQR = require("../dist").default;
     await handler.getQRCode({
       path: path.resolve(__dirname, "../assets/qr.png"),
       // browserOptions: { headless: false, defaultViewport: null },
-      // template: "default",
+      template: "default",
     });
     console.log("QR code created !");
 

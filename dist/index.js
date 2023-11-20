@@ -61,10 +61,10 @@ class DiscordTQR {
             yield page.goto(this.config.loginUrl, {
                 waitUntil: "networkidle2",
             });
-            yield page.waitForSelector('[class^="qrCode-"] img[src^="data:image/png;base64,"], [class^="qrCode-"] svg');
+            yield page.waitForSelector('[class^="qrCodeOverlay"]');
             if (options === null || options === void 0 ? void 0 : options.wait)
                 yield new Promise((r) => setTimeout(r, options.wait));
-            const qrC = yield page.$('[class^="qrCode-"]');
+            const qrC = yield page.$('[class^="qrCodeOverlay"]');
             let data = yield qrC.screenshot(Object.assign(Object.assign(Object.assign({}, (options.path && !options.template ? { path: options.path } : {})), (options.encoding ? { path: options.encoding } : {})), { captureBeyondViewport: false }));
             let finalImageBase64 = data instanceof Buffer ? data.toString("base64") : data;
             //template
